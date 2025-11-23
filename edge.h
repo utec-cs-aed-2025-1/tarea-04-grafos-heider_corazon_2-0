@@ -23,7 +23,18 @@ public:
     sfLine(const sf::Vector2f& point1, const sf::Vector2f& point2, sf::Color color, float thickness)
     : thickness(thickness) {
         sf::Vector2f direction = point2 - point1;
-        sf::Vector2f unitDirection = direction/std::sqrt(direction.x*direction.x+direction.y*direction.y);
+        float magnitude = std::sqrt(direction.x*direction.x+direction.y*direction.y);
+        
+        // Si los puntos son iguales o muy cercanos, no dibujar la línea (vertices en el mismo punto)
+        if (magnitude < 0.001f) {
+            for (int i = 0; i < 4; ++i) {
+                Vertices[i].position = point1;
+                Vertices[i].color = color;
+            }
+            return;
+        }
+        
+        sf::Vector2f unitDirection = direction / magnitude;
         sf::Vector2f unitPerpendicular(-unitDirection.y,unitDirection.x);
 
         sf::Vector2f offset = (this->thickness/2.f)*unitPerpendicular;
@@ -39,7 +50,7 @@ public:
     }
 
     void draw(sf::RenderTarget &target, sf::RenderStates states) const override {
-        target.draw(Vertices,4,sf::Quads);
+        target.draw(Vertices,4,sf::PrimitiveType::TriangleFan);
     }
 
 private:
@@ -115,13 +126,44 @@ struct Edge {
             for (int i = 0; i < 3; ++i) lanes[i] = '\0';
 
             file.getline(src, 15, ',');
+            if (file.eof() || file.fail() || src[0] == '\0') {
+                delete[] src; delete[] dest; delete[] max_speed;
+                delete[] length; delete[] oneway; delete[] lanes;
+                break;
+            }
+            
             file.getline(dest, 15, ',');
+            if (file.fail() || dest[0] == '\0') {
+                delete[] src; delete[] dest; delete[] max_speed;
+                delete[] length; delete[] oneway; delete[] lanes;
+                break;
+            }
+            
             file.getline(max_speed, 5, ',');
+            if (file.fail() || max_speed[0] == '\0') {
+                delete[] src; delete[] dest; delete[] max_speed;
+                delete[] length; delete[] oneway; delete[] lanes;
+                break;
+            }
+            
             file.getline(length, 20, ',');
+            if (file.fail() || length[0] == '\0') {
+                delete[] src; delete[] dest; delete[] max_speed;
+                delete[] length; delete[] oneway; delete[] lanes;
+                break;
+            }
+            
             file.getline(oneway, 6, ',');
+            if (file.fail() || oneway[0] == '\0') {
+                delete[] src; delete[] dest; delete[] max_speed;
+                delete[] length; delete[] oneway; delete[] lanes;
+                break;
+            }
+            
             file.getline(lanes, 3, '\n');
-
-            if (file.eof()) {
+            if (file.fail() || lanes[0] == '\0') {
+                delete[] src; delete[] dest; delete[] max_speed;
+                delete[] length; delete[] oneway; delete[] lanes;
                 break;
             }
 

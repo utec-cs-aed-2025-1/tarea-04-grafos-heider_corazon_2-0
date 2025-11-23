@@ -24,6 +24,8 @@
 // Funciones miembro
 //     - parse_csv     : Lee las aristas y vértices desde los csv
 //     - draw          : Dibuja las aristas y luego los vertices del grafo sobre la ventana
+
+
 //     - reset         : Restaura los colores de vértices y aristas a sus colores por defecto
 // *
 struct Graph {
