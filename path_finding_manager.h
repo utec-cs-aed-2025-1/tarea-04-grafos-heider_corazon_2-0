@@ -48,11 +48,50 @@ class PathFindingManager {
 
     void dijkstra(Graph &graph) {
         std::unordered_map<Node *, Node *> parent;
-        // TODO: Add your code here
+        std::unordered_map<Node *, double> dist;
+        std::set<Entry> pq;
+
+        // Inicializar distancias
+        for (auto &[id, node] : graph.nodes) {
+            dist[node] = std::numeric_limits<double>::max();
+        }
+
+        dist[src] = 0.0;
+        pq.insert({src, 0.0});
+
+        while (!pq.empty()) {
+            Entry current = *pq.begin();
+            pq.erase(pq.begin());
+
+            Node* u = current.node;
+
+            if (u == dest) break;  // Encontró el destino
+
+            // Explorar vecinos
+            for (Edge* edge : u->edges) {
+                Node* v = (edge->src == u) ? edge->dest : edge->src;
+                double weight = edge->length;
+                double newDist = dist[u] + weight;
+
+                if (newDist < dist[v]) {
+                    // Registrar arista explorada (en CYAN y más gruesa para visibilidad)
+                    visited_edges.push_back(sfLine(u->coord, v->coord, sf::Color::Cyan, 2.5f));
+
+                    // Remover la entrada antigua si existe
+                    auto it = pq.find({v, dist[v]});
+                    if (it != pq.end()) pq.erase(it);
+
+                    dist[v] = newDist;
+                    parent[v] = u;
+                    pq.insert({v, newDist});
+                }
+            }
+        }
 
         set_final_path(parent);
+        std::cout << ">> [DIJKSTRA] Aristas exploradas: " << visited_edges.size()
+                  << " | Camino final: " << path.size() << " aristas" << std::endl;
     }
-
     void a_star(Graph &graph) {
         std::unordered_map<Node *, Node *> parent;
         // TODO: Add your code here
@@ -129,9 +168,20 @@ class PathFindingManager {
     // Este path será utilizado para hacer el 'draw()' del 'path' entre 'src' y 'dest'.
     //*
     void set_final_path(std::unordered_map<Node *, Node *> &parent) {
+        path.clear();
+
+        if (parent.find(dest) == parent.end()) {
+            return;  // No hay camino
+        }
+
         Node* current = dest;
 
-        // TODO: Add your code here
+        while (current != src && parent.find(current) != parent.end()) {
+            Node* prev = parent[current];
+            // Camino final en ROJO para mejor visibilidad
+            path.push_back(sfLine(prev->coord, current->coord, sf::Color::Red, 3.0f));
+            current = prev;
+        }
     }
 
 public:
