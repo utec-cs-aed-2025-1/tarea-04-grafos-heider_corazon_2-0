@@ -126,9 +126,20 @@ class PathFindingManager {
     // Este path será utilizado para hacer el 'draw()' del 'path' entre 'src' y 'dest'.
     //*
     void set_final_path(std::unordered_map<Node *, Node *> &parent) {
+        path.clear();
+
+        if (parent.find(dest) == parent.end()) {
+            return;  // No hay camino
+        }
+
         Node* current = dest;
 
-        // TODO: Add your code here
+        while (current != src && parent.find(current) != parent.end()) {
+            Node* prev = parent[current];
+            // Camino final en ROJO para mejor visibilidad
+            path.push_back(sfLine(prev->coord, current->coord, sf::Color::Red, 3.0f));
+            current = prev;
+        }
     }
 
 public:
