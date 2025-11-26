@@ -14,18 +14,23 @@
 // Color por defecto de todas las aristas (usado por SFML)
 sf::Color default_edge_color = sf::Color(255, 200, 100);
 // Grosor por defecto de todas las aristas (usado por SFML)
-float default_thickness = 0.8;
+float default_thickness = 1.2f;
 
 
-// No tocar esta clase
+// No tocar esta clase (solo se adapta a SFML 3.0)
 class sfLine : public sf::Drawable {
 public:
-    sfLine(const sf::Vector2f& point1, const sf::Vector2f& point2, sf::Color color, float thickness)
-    : thickness(thickness) {
+    sfLine(const sf::Vector2f& point1,
+           const sf::Vector2f& point2,
+           sf::Color color,
+           float thickness)
+        : thickness(thickness) {
+
         sf::Vector2f direction = point2 - point1;
-        float magnitude = std::sqrt(direction.x*direction.x+direction.y*direction.y);
-        
-        // Si los puntos son iguales o muy cercanos, no dibujar la línea (vertices en el mismo punto)
+        float magnitude = std::sqrt(direction.x * direction.x +
+                                    direction.y * direction.y);
+
+        // Si los puntos son iguales o muy cercanos, evitamos dividir entre 0
         if (magnitude < 0.001f) {
             for (int i = 0; i < 4; ++i) {
                 Vertices[i].position = point1;
@@ -33,24 +38,25 @@ public:
             }
             return;
         }
-        
-        sf::Vector2f unitDirection = direction / magnitude;
-        sf::Vector2f unitPerpendicular(-unitDirection.y,unitDirection.x);
 
-        sf::Vector2f offset = (this->thickness/2.f)*unitPerpendicular;
+        sf::Vector2f unitDirection = direction / magnitude;
+        sf::Vector2f unitPerpendicular(-unitDirection.y, unitDirection.x);
+
+        sf::Vector2f offset = (this->thickness / 2.f) * unitPerpendicular;
 
         Vertices[0].position = point1 + offset;
         Vertices[1].position = point2 + offset;
         Vertices[2].position = point2 - offset;
         Vertices[3].position = point1 - offset;
 
-        for (auto & vertex : Vertices) {
+        for (auto &vertex : Vertices) {
             vertex.color = color;
         }
     }
 
     void draw(sf::RenderTarget &target, sf::RenderStates states) const override {
-        target.draw(Vertices,4,sf::PrimitiveType::TriangleFan);
+        // En SFML 3.0 ya no existe Quads, usamos TriangleFan
+        target.draw(Vertices, 4, sf::PrimitiveType::TriangleFan, states);
     }
 
 private:
@@ -91,16 +97,22 @@ struct Edge {
     sf::Color color = default_edge_color;
     float thickness = default_thickness;
 
-    explicit Edge(Node *src, Node *dest, int max_speed, double length, bool one_way, int lanes) : max_speed(max_speed),
-                                                                                                  length(length),
-                                                                                                  one_way(one_way),
-                                                                                                  lanes(lanes),
-                                                                                                  src(src),
-                                                                                                  dest(dest) {
-    }
+    explicit Edge(Node *src,
+                  Node *dest,
+                  int max_speed,
+                  double length,
+                  bool one_way,
+                  int lanes)
+        : src(src),
+          dest(dest),
+          max_speed(max_speed),
+          length(length),
+          one_way(one_way),
+          lanes(lanes) {}
 
-    static void
-    parse_csv(const std::string &edges_path, std::vector<Edge *> &edges, std::map<std::size_t, Node *> &nodes) {
+    static void parse_csv(const std::string &edges_path,
+                          std::vector<Edge *> &edges,
+                          std::map<std::size_t, Node *> &nodes) {
         edges.reserve(790'509);
 
         std::ifstream file(edges_path);
@@ -126,67 +138,44 @@ struct Edge {
             for (int i = 0; i < 3; ++i) lanes[i] = '\0';
 
             file.getline(src, 15, ',');
-            if (file.eof() || file.fail() || src[0] == '\0') {
-                delete[] src; delete[] dest; delete[] max_speed;
-                delete[] length; delete[] oneway; delete[] lanes;
-                break;
-            }
-            
             file.getline(dest, 15, ',');
-            if (file.fail() || dest[0] == '\0') {
-                delete[] src; delete[] dest; delete[] max_speed;
-                delete[] length; delete[] oneway; delete[] lanes;
-                break;
-            }
-            
             file.getline(max_speed, 5, ',');
-            if (file.fail() || max_speed[0] == '\0') {
-                delete[] src; delete[] dest; delete[] max_speed;
-                delete[] length; delete[] oneway; delete[] lanes;
-                break;
-            }
-            
             file.getline(length, 20, ',');
-            if (file.fail() || length[0] == '\0') {
-                delete[] src; delete[] dest; delete[] max_speed;
-                delete[] length; delete[] oneway; delete[] lanes;
-                break;
-            }
-            
             file.getline(oneway, 6, ',');
-            if (file.fail() || oneway[0] == '\0') {
-                delete[] src; delete[] dest; delete[] max_speed;
-                delete[] length; delete[] oneway; delete[] lanes;
-                break;
-            }
-            
             file.getline(lanes, 3, '\n');
-            if (file.fail() || lanes[0] == '\0') {
-                delete[] src; delete[] dest; delete[] max_speed;
-                delete[] length; delete[] oneway; delete[] lanes;
+
+            if (file.eof() || file.fail() || src[0] == '\0') {
+                // Liberamos memoria antes de salir
+                delete[] src;
+                delete[] dest;
+                delete[] max_speed;
+                delete[] length;
+                delete[] oneway;
+                delete[] lanes;
                 break;
             }
 
-            std::size_t src_id = static_cast<size_t>(std::stoll(src));
-            std::size_t dest_id = static_cast<size_t>(std::stoll(dest));
+            std::size_t src_id = static_cast<std::size_t>(std::stoll(src));
+            std::size_t dest_id = static_cast<std::size_t>(std::stoll(dest));
 
             Node *src_node = nodes[src_id];
             Node *dest_node = nodes[dest_id];
 
             Edge *edge = new Edge(
-                    src_node,
-                    dest_node,
-                    std::stoi(max_speed),
-                    std::stod(length),
-                    std::strcmp(oneway, "True") == 0,
-                    std::stoi(lanes)
+                src_node,
+                dest_node,
+                std::stoi(max_speed),
+                std::stod(length),
+                std::strcmp(oneway, "True") == 0,
+                std::stoi(lanes)
             );
             edges.push_back(edge);
 
             delete[] src;
             delete[] dest;
-            delete[] oneway;
+            delete[] max_speed;
             delete[] length;
+            delete[] oneway;
             delete[] lanes;
         }
     }
@@ -194,6 +183,11 @@ struct Edge {
     void draw(sf::RenderWindow &window) const {
         sfLine line(src->coord, dest->coord, color, thickness);
         line.draw(window, sf::RenderStates::Default);
+    }
+
+    void reset() {
+        color = default_edge_color;
+        thickness = default_thickness;
     }
 };
 

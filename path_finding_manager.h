@@ -50,31 +50,31 @@ class PathFindingManager {
     };
 
     void dijkstra(Graph &graph) {
-        std::unordered_map<Node *, Node *> parent;
-        std::unordered_map<Node *, double> dist;
-        std::set<Entry> pq;
+        std::unordered_map<Node *, Node *> parent;//aca guardamos el camino resultante
+        std::unordered_map<Node *, double> dist;//aca guardamos la distancia resultante
+        std::set<Entry> pq;//aca guardamos la cola de prioridad
         
-        // Inicializar distancias
-        for (auto &[id, node] : graph.nodes) {
+        // Inicializar distancias           
+        for (auto &[id, node] : graph.nodes){
             dist[node] = std::numeric_limits<double>::max();
         }
         
-        dist[src] = 0.0;
-        pq.insert({src, 0.0});
+        dist[src] = 0.0;//distancia del origen al origen es 0
+        pq.insert({src, 0.0});//insertamos el origen en la cola de prioridad
         
         while (!pq.empty()) {
-            Entry current = *pq.begin();
+            Entry current = *pq.begin();//obtenemos el elemento con menor distancia
             pq.erase(pq.begin());
             
-            Node* u = current.node;
+            Node* u = current.node;//obtenemos el nodo con menor distancia
             
-            if (u == dest) break;  // Encontró el destino
+            if (u == dest) break;//Si el nodo actual es el destino, salimos del bucle
             
             // Explorar vecinos
             for (Edge* edge : u->edges) {
-                Node* v = (edge->src == u) ? edge->dest : edge->src;
-                double weight = edge->length;
-                double newDist = dist[u] + weight;
+                Node* v = (edge->src == u) ? edge->dest : edge->src;//obtenemos el vecino
+                double weight = edge->length;//obtenemos el peso de la arista
+                double newDist = dist[u] + weight;//obtenemos la distancia acumulada
                 
                 if (newDist < dist[v]) {
                     // Registrar arista explorada (en CYAN y más gruesa para visibilidad)
@@ -84,9 +84,9 @@ class PathFindingManager {
                     auto it = pq.find({v, dist[v]});
                     if (it != pq.end()) pq.erase(it);
                     
-                    dist[v] = newDist;
-                    parent[v] = u;
-                    pq.insert({v, newDist});
+                    dist[v] = newDist;//actualizamos la distancia
+                    parent[v] = u;//actualizamos el camino
+                    pq.insert({v, newDist});//insertamos el vecino en la cola de prioridad
                 }
             }
         }
@@ -105,7 +105,7 @@ class PathFindingManager {
         auto heuristic = [](Node* a, Node* b) -> double {
             float dx = a->coord.x - b->coord.x;
             float dy = a->coord.y - b->coord.y;
-            return std::sqrt(dx*dx + dy*dy);
+            return std::sqrt(dx*dx + dy*dy) * 140.0;
         };
         
         // Best First Search usa SOLO la heurística (greedy)
@@ -152,7 +152,7 @@ class PathFindingManager {
         auto heuristic = [](Node* a, Node* b) -> double {
             float dx = a->coord.x - b->coord.x;
             float dy = a->coord.y - b->coord.y;
-            return std::sqrt(dx*dx + dy*dy);
+            return std::sqrt(dx*dx + dy*dy) * 140.0;
         };
         
         // Solo inicializar el nodo origen

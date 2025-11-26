@@ -9,6 +9,7 @@
 #include "window_manager.h"
 #include "node.h"
 #include "edge.h"
+#include <iostream>
 
 
 // *
@@ -24,8 +25,6 @@
 // Funciones miembro
 //     - parse_csv     : Lee las aristas y vértices desde los csv
 //     - draw          : Dibuja las aristas y luego los vertices del grafo sobre la ventana
-
-
 //     - reset         : Restaura los colores de vértices y aristas a sus colores por defecto
 // *
 struct Graph {
@@ -33,11 +32,15 @@ struct Graph {
     std::map<size_t, Node *> nodes;
     std::vector<Edge *> edges;
 
-    explicit Graph(WindowManager* window_manager): window_manager(window_manager) {}
+    explicit Graph(WindowManager* window_manager)
+        : window_manager(window_manager) {}
 
     void parse_csv(const std::string &nodes_path, const std::string &edges_path) {
         Node::parse_csv(nodes_path, this->nodes);
         Edge::parse_csv(edges_path, this->edges, this->nodes);
+
+        std::cout << "[INFO] Nodos cargados: " << nodes.size() << std::endl;
+        std::cout << "[INFO] Aristas cargadas: " << edges.size() << std::endl;
 
         for (Edge *edge: edges) {
             nodes[edge->src->id]->edges.push_back(edge);
@@ -55,8 +58,18 @@ struct Graph {
             node->draw(window_manager->get_window());
         }
     }
-};
 
+    void reset() {
+        // Restaurar vértices
+        for (auto &[_, node] : nodes) {
+            node->reset();
+        }
+        // Restaurar aristas
+        for (Edge *edge : edges) {
+            edge->reset();
+        }
+    }
+};
 
 
 #endif //HOMEWORK_GRAPH_GRAPH_H

@@ -13,7 +13,7 @@
 // Color por defecto de un vertice (usado por SFML)
 sf::Color default_node_color = sf::Color(150, 40, 50);
 // Radio por defecto de un vertice (usado por SFML)
-float default_radius = 0.4f;
+float default_radius = 1.5f;
 
 
 struct Edge;
