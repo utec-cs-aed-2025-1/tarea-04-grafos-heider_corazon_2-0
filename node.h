@@ -7,11 +7,13 @@
 
 #include <SFML/Graphics.hpp>
 #include <fstream>
+#include <map>
+#include <vector>
 
 // Color por defecto de un vertice (usado por SFML)
 sf::Color default_node_color = sf::Color(150, 40, 50);
 // Radio por defecto de un vertice (usado por SFML)
-float default_radius = 0.4f;
+float default_radius = 1.5f;
 
 
 struct Edge;
@@ -60,10 +62,26 @@ struct Node {
             for (int i = 0; i < 15; ++i) x[i] = '\0';
 
             file.getline(id, 15, ',');
+            if (file.eof() || file.fail() || id[0] == '\0') {
+                delete[] id;
+                delete[] y;
+                delete[] x;
+                break;
+            }
+            
             file.getline(y, 15, ',');
+            if (file.fail() || y[0] == '\0') {
+                delete[] id;
+                delete[] y;
+                delete[] x;
+                break;
+            }
+            
             file.getline(x, 15, '\n');
-
-            if (file.eof()) {
+            if (file.fail() || x[0] == '\0') {
+                delete[] id;
+                delete[] y;
+                delete[] x;
                 break;
             }
 
