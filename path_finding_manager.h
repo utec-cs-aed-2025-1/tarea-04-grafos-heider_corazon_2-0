@@ -98,8 +98,67 @@ class PathFindingManager {
 
     void a_star(Graph &graph) {
         std::unordered_map<Node *, Node *> parent;
-        // TODO: Add your code here
+        void a_star(Graph &graph) {
+        std::unordered_map<Node *, Node *> parent;
+        std::unordered_map<Node *, double> gScore;  // Costo real desde src
+        std::set<Entry> openSet;
+        std::unordered_set<Node*> closedSet;  // Nodos ya procesados
+        
+        // Función heurística: distancia euclidiana
+        auto heuristic = [](Node* a, Node* b) -> double {
+            float dx = a->coord.x - b->coord.x;
+            float dy = a->coord.y - b->coord.y;
+            return std::sqrt(dx*dx + dy*dy) * 140.0;
+        };
+        
+        // Solo inicializar el nodo origen
+        gScore[src] = 0.0;
+        double fScore_src = heuristic(src, dest);
+        openSet.insert({src, fScore_src});
+        
+        while (!openSet.empty()) {
+            Entry current = *openSet.begin();
+            openSet.erase(openSet.begin());
+            Node* u = current.node;
+            
+            // Si ya procesamos este nodo, skip
+            if (closedSet.find(u) != closedSet.end()) continue;
+            closedSet.insert(u);
+            
+            if (u == dest) break;
+            
+            for (Edge* edge : u->edges) {
+                Node* v = (edge->src == u) ? edge->dest : edge->src;
+                
+                // Si ya procesamos v, skip
+                if (closedSet.find(v) != closedSet.end()) continue;
+                
+                double tentative_gScore = gScore[u] + edge->length;
+                
+                // Si no hemos visitado v, o encontramos un camino mejor
+                if (gScore.find(v) == gScore.end() || tentative_gScore < gScore[v]) {
+                    // Registrar arista explorada (en CYAN y más gruesa para visibilidad)
+                    visited_edges.push_back(sfLine(u->coord, v->coord, sf::Color::Cyan, 2.5f));
+                    
+                    // Remover entrada antigua si existe
+                    if (gScore.find(v) != gScore.end()) {
+                        double oldF = gScore[v] + heuristic(v, dest);
+                        auto it = openSet.find({v, oldF});
+                        if (it != openSet.end()) openSet.erase(it);
+                    }
+                    
+                    parent[v] = u;
+                    gScore[v] = tentative_gScore;
+                    double fScore_v = gScore[v] + heuristic(v, dest);
+                    openSet.insert({v, fScore_v});
+                }
+            }
+        }
 
+        set_final_path(parent);
+        std::cout << ">> [A*] Aristas exploradas: " << visited_edges.size() 
+                  << " | Camino final: " << path.size() << " aristas" << std::endl;
+    }
         set_final_path(parent);
     }
 
