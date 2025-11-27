@@ -9,7 +9,9 @@
 #include "window_manager.h"
 #include "graph.h"
 #include <unordered_map>
+#include <unordered_set>
 #include <set>
+#include <iostream>
 
 
 // Este enum sirve para identificar el algoritmo que el usuario desea simular
@@ -47,51 +49,50 @@ class PathFindingManager {
         }
     };
 
-
     void dijkstra(Graph &graph) {
-        std::unordered_map<Node *, Node *> parent;
-        std::unordered_map<Node *, double> dist;
-        std::set<Entry> pq;
-
-        // Inicializar distancias
-        for (auto &[id, node] : graph.nodes) {
+        std::unordered_map<Node *, Node *> parent;//aca guardamos el camino resultante
+        std::unordered_map<Node *, double> dist;//aca guardamos la distancia resultante
+        std::set<Entry> pq;//aca guardamos la cola de prioridad
+        
+        // Inicializar distancias           
+        for (auto &[id, node] : graph.nodes){
             dist[node] = std::numeric_limits<double>::max();
         }
-
-        dist[src] = 0.0;
-        pq.insert({src, 0.0});
-
+        
+        dist[src] = 0.0;//distancia del origen al origen es 0
+        pq.insert({src, 0.0});//insertamos el origen en la cola de prioridad
+        
         while (!pq.empty()) {
-            Entry current = *pq.begin();
+            Entry current = *pq.begin();//obtenemos el elemento con menor distancia
             pq.erase(pq.begin());
-
-            Node* u = current.node;
-
-            if (u == dest) break;  // Encontró el destino
-
+            
+            Node* u = current.node;//obtenemos el nodo con menor distancia
+            
+            if (u == dest) break;//Si el nodo actual es el destino, salimos del bucle
+            
             // Explorar vecinos
             for (Edge* edge : u->edges) {
-                Node* v = (edge->src == u) ? edge->dest : edge->src;
-                double weight = edge->length;
-                double newDist = dist[u] + weight;
-
+                Node* v = (edge->src == u) ? edge->dest : edge->src;//obtenemos el vecino
+                double weight = edge->length;//obtenemos el peso de la arista
+                double newDist = dist[u] + weight;//obtenemos la distancia acumulada
+                
                 if (newDist < dist[v]) {
                     // Registrar arista explorada (en CYAN y más gruesa para visibilidad)
                     visited_edges.push_back(sfLine(u->coord, v->coord, sf::Color::Cyan, 2.5f));
-
+                    
                     // Remover la entrada antigua si existe
                     auto it = pq.find({v, dist[v]});
                     if (it != pq.end()) pq.erase(it);
-
-                    dist[v] = newDist;
-                    parent[v] = u;
-                    pq.insert({v, newDist});
+                    
+                    dist[v] = newDist;//actualizamos la distancia
+                    parent[v] = u;//actualizamos el camino
+                    pq.insert({v, newDist});//insertamos el vecino en la cola de prioridad
                 }
             }
         }
 
         set_final_path(parent);
-        std::cout << ">> [DIJKSTRA] Aristas exploradas: " << visited_edges.size()
+        std::cout << ">> [DIJKSTRA] Aristas exploradas: " << visited_edges.size() 
                   << " | Camino final: " << path.size() << " aristas" << std::endl;
     }
 
@@ -99,34 +100,34 @@ class PathFindingManager {
         std::unordered_map<Node *, Node *> parent;
         std::set<Entry> openSet;
         std::unordered_set<Node*> visited;
-
+        
         // Función heurística: distancia euclidiana
         auto heuristic = [](Node* a, Node* b) -> double {
             float dx = a->coord.x - b->coord.x;
             float dy = a->coord.y - b->coord.y;
             return std::sqrt(dx*dx + dy*dy) * 140.0;
         };
-
+        
         // Best First Search usa SOLO la heurística (greedy)
         openSet.insert({src, heuristic(src, dest)});
-
+        
         while (!openSet.empty()) {
             Entry current = *openSet.begin();
             openSet.erase(openSet.begin());
             Node* u = current.node;
-
+            
             if (visited.find(u) != visited.end()) continue;
             visited.insert(u);
-
+            
             if (u == dest) break;
-
+            
             for (Edge* edge : u->edges) {
                 Node* v = (edge->src == u) ? edge->dest : edge->src;
-
+                
                 if (visited.find(v) == visited.end()) {
                     // Registrar arista explorada (en CYAN y más gruesa para visibilidad)
                     visited_edges.push_back(sfLine(u->coord, v->coord, sf::Color::Cyan, 2.5f));
-
+                    
                     if (parent.find(v) == parent.end()) {
                         parent[v] = u;
                         // Solo usa heurística, no costo acumulado
@@ -137,14 +138,11 @@ class PathFindingManager {
         }
 
         set_final_path(parent);
-        std::cout << ">> [BEST FIRST SEARCH] Aristas exploradas: " << visited_edges.size()
+        std::cout << ">> [BEST FIRST SEARCH] Aristas exploradas: " << visited_edges.size() 
                   << " | Camino final: " << path.size() << " aristas" << std::endl;
     }
 
-
     void a_star(Graph &graph) {
-        std::unordered_map<Node *, Node *> parent;
-        void a_star(Graph &graph) {
         std::unordered_map<Node *, Node *> parent;
         std::unordered_map<Node *, double> gScore;  // Costo real desde src
         std::set<Entry> openSet;
@@ -205,8 +203,6 @@ class PathFindingManager {
         std::cout << ">> [A*] Aristas exploradas: " << visited_edges.size() 
                   << " | Camino final: " << path.size() << " aristas" << std::endl;
     }
-        set_final_path(parent);
-    }
 
     //* --- render ---
     // En cada iteración de los algoritmos esta función es llamada para dibujar los cambios en el 'window_manager'
@@ -232,13 +228,13 @@ class PathFindingManager {
     //*
     void set_final_path(std::unordered_map<Node *, Node *> &parent) {
         path.clear();
-
+        
         if (parent.find(dest) == parent.end()) {
             return;  // No hay camino
         }
-
+        
         Node* current = dest;
-
+        
         while (current != src && parent.find(current) != parent.end()) {
             Node* prev = parent[current];
             // Camino final en ROJO para mejor visibilidad
@@ -261,25 +257,25 @@ public:
         // Solo limpiar los caminos previos, NO resetear src/dest
         path.clear();
         visited_edges.clear();
-
+        
         // Asegurar que src y dest tengan los colores correctos
         src->color = sf::Color::Green;
         src->radius = 3.0f;
         dest->color = sf::Color::Cyan;
         dest->radius = 3.0f;
-
+        
         switch (algorithm) {
-        case Dijkstra:
-            dijkstra(graph);
-            break;
-        case BestFirstSearch:
-            best_first_search(graph);
-            break;
-        case AStar:
-            a_star(graph);
-            break;
-        default:
-            break;
+            case Dijkstra:
+                dijkstra(graph);
+                break;
+            case BestFirstSearch:
+                best_first_search(graph);
+                break;
+            case AStar:
+                a_star(graph);
+                break;
+            default:
+                break;
         }
     }
 
