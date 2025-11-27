@@ -95,6 +95,52 @@ class PathFindingManager {
                   << " | Camino final: " << path.size() << " aristas" << std::endl;
     }
 
+    void best_first_search(Graph &graph) {
+        std::unordered_map<Node *, Node *> parent;
+        std::set<Entry> openSet;
+        std::unordered_set<Node*> visited;
+
+        // Función heurística: distancia euclidiana
+        auto heuristic = [](Node* a, Node* b) -> double {
+            float dx = a->coord.x - b->coord.x;
+            float dy = a->coord.y - b->coord.y;
+            return std::sqrt(dx*dx + dy*dy) * 140.0;
+        };
+
+        // Best First Search usa SOLO la heurística (greedy)
+        openSet.insert({src, heuristic(src, dest)});
+
+        while (!openSet.empty()) {
+            Entry current = *openSet.begin();
+            openSet.erase(openSet.begin());
+            Node* u = current.node;
+
+            if (visited.find(u) != visited.end()) continue;
+            visited.insert(u);
+
+            if (u == dest) break;
+
+            for (Edge* edge : u->edges) {
+                Node* v = (edge->src == u) ? edge->dest : edge->src;
+
+                if (visited.find(v) == visited.end()) {
+                    // Registrar arista explorada (en CYAN y más gruesa para visibilidad)
+                    visited_edges.push_back(sfLine(u->coord, v->coord, sf::Color::Cyan, 2.5f));
+
+                    if (parent.find(v) == parent.end()) {
+                        parent[v] = u;
+                        // Solo usa heurística, no costo acumulado
+                        openSet.insert({v, heuristic(v, dest)});
+                    }
+                }
+            }
+        }
+
+        set_final_path(parent);
+        std::cout << ">> [BEST FIRST SEARCH] Aristas exploradas: " << visited_edges.size()
+                  << " | Camino final: " << path.size() << " aristas" << std::endl;
+    }
+
 
     void a_star(Graph &graph) {
         std::unordered_map<Node *, Node *> parent;
@@ -212,7 +258,29 @@ public:
             return;
         }
 
-        // TODO: Add your code here
+        // Solo limpiar los caminos previos, NO resetear src/dest
+        path.clear();
+        visited_edges.clear();
+
+        // Asegurar que src y dest tengan los colores correctos
+        src->color = sf::Color::Green;
+        src->radius = 3.0f;
+        dest->color = sf::Color::Cyan;
+        dest->radius = 3.0f;
+
+        switch (algorithm) {
+        case Dijkstra:
+            dijkstra(graph);
+            break;
+        case BestFirstSearch:
+            best_first_search(graph);
+            break;
+        case AStar:
+            a_star(graph);
+            break;
+        default:
+            break;
+        }
     }
 
     void reset() {
