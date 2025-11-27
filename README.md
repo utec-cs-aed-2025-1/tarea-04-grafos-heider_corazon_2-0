@@ -4,8 +4,8 @@
 
 ## Integrantes: 
 - 1 Joel Cayllahua Hilario
-- 2 ____   _____
-- 3 ____   _____
+- 2 Bruno Garcia Lopez
+- 3 Karolay Tamayo Hilario
 
 ## Objetivo: 
 El objetivo de esta tarea es implementar un **Path Finder** para la ciudad de Lima. 
@@ -67,6 +67,7 @@ Además:
 ----------
 > **Créditos:** Juan Diego Castro Padilla [juan.castro.p@utec.edu.pe](mailto:juan.castro.p@utec.edu.pe)
 
-
+## Demo
+https://drive.google.com/drive/folders/1wk8ZANF18j--0evuwgqwnaap1mJZzZJx?usp=sharing
 
 
