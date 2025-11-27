@@ -1,2 +1,7 @@
 .idea/
 cmake-build-debug/
+build/
+.vscode/
+*.o
+homework_graph
+.DS_Store
